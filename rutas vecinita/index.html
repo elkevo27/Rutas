@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recorrido "La Vecinita" en La Maná, Cotopaxi</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        #info {
+            margin-top: 20px;
+        }
+        .car {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recorrido Real de Carros en La Maná, Cotopaxi</h1>
+    <div id="map"></div>
+    <div id="info">
+        <p id="distance">Distancia: 0 km</p>
+        <p id="time">Tiempo estimado: 0 minutos</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script>
+        // Coordenadas del punto de meta
+        const destination = { lat: -0.9300, lng: -79.2200 };
+
+        // Crear el mapa centrado en La Maná
+        const map = L.map('map').setView(destination, 14);
+
+        // Añadir capa de mapa de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Añadir marcador de meta
+        const markerMeta = L.marker(destination).addTo(map).bindPopup('Meta').openPopup();
+
+        // Crear icono personalizado para los carros
+        const carIcon = L.icon({
+            iconUrl: 'https://i.ibb.co/PrKt8qT/carritospl.png', // Reemplaza con la URL de tu icono de carro
+            iconSize: [62, 62],
+            iconAnchor: [46, 46],
+        });
+
+        // Añadir tres carros en posiciones iniciales
+        const car1 = L.marker([-0.9392, -79.2400], { icon: carIcon, draggable: true, className: 'car' }).addTo(map);
+        const car2 = L.marker([-0.9492, -79.2300], { icon: carIcon, draggable: true, className: 'car' }).addTo(map);
+        const car3 = L.marker([-0.9392, -79.2200], { icon: carIcon, draggable: true, className: 'car' }).addTo(map);
+
+        // Configuración de la ruta con OSRM
+        let routingControl;
+
+        function calculateRoute(marker) {
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: [
+                    marker.getLatLng(),
+                    L.latLng(destination.lat, destination.lng)
+                ],
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                }),
+                lineOptions: {
+                    styles: [{ color: 'blue', weight: 4 }]
+                },
+                createMarker: function() { return null; }, // Oculta los marcadores de inicio y destino
+                addWaypoints: false,
+                routeWhileDragging: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: false
+            }).addTo(map);
+
+            routingControl.on('routesfound', function(e) {
+                const route = e.routes[0];
+                const distance = route.summary.totalDistance / 1000; // en kilómetros
+                const duration = route.summary.totalTime / 60; // en minutos
+
+                document.getElementById("distance").textContent = `Distancia: ${distance.toFixed(2)} km`;
+                document.getElementById("time").textContent = `Tiempo estimado: ${duration.toFixed(2)} minutos`;
+            });
+        }
+
+        // Añadir eventos de arrastre a los carros
+        car1.on('dragend', function(e) { calculateRoute(e.target); });
+        car2.on('dragend', function(e) { calculateRoute(e.target); });
+        car3.on('dragend', function(e) { calculateRoute(e.target); });
+
+    </script>
+</body>
+</html>
+
+
